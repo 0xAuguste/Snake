@@ -31,8 +31,8 @@ public class Board extends JPanel implements KeyListener
         setFocusable(true);
         JFrame board = new JFrame();
         board.pack();
-        board.setSize(board.getContentPane().getInsets().left + 1200 + board.getContentPane().getInsets().right,
-            board.getContentPane().getInsets().top + 800 + board.getContentPane().getInsets().bottom);
+        board.setSize(board.getInsets().left + 1200 + board.getInsets().right,
+            board.getInsets().top + 800 + board.getInsets().bottom);
         board.add(this);
         board.setResizable(false);
         dots.add(new Dot(assignX(),assignY()));
