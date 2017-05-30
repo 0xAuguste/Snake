@@ -2,6 +2,9 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class Board extends JPanel implements KeyListener
 {
     private int up = KeyEvent.VK_UP;
@@ -22,23 +25,43 @@ public class Board extends JPanel implements KeyListener
     Color background = new Color(150,210,140);
     Color border = new Color(75,63,45);
     Color apple = new Color(175,45,22);
-    
+
     public Board(){
         addKeyListener(this);
         setFocusable(true);
         JFrame board = new JFrame();
-        board.setSize(1200, 822);
+        board.pack();
+        board.setSize(board.getContentPane().getInsets().left + 1200 + board.getContentPane().getInsets().right,
+            board.getContentPane().getInsets().top + 800 + board.getContentPane().getInsets().bottom);
         board.add(this);
-        board.setVisible(true);
+        board.setResizable(false);
         dots.add(new Dot(assignX(),assignY()));
+        TimerTask timerTask = new TimerTask(){
+            public void run() {
+                if(gameRunning){
+                    move();
+                    checkApple();
+                    checkCollision();
+                }
+            }
+        };
+        
+        //running timer task as daemon thread
+        Timer timer = new Timer(true);
+        timer.scheduleAtFixedRate(timerTask, 0, 70);
+
+        board.setVisible(true);
         setApple();
-        game();
-    }   
+    } 
+
+    public static void main(String[] args){
+        new Board();
+    }
 
     public void paintComponent(Graphics g){
         //background
         g.setColor(background);
-        
+
         //border
         g.fillRect(0,0,1200,800);
         g.setColor(border);
@@ -48,7 +71,7 @@ public class Board extends JPanel implements KeyListener
         g.fillRect(0, 780, 1200, 20);
         g.setColor(apple);
         g.fillRect(appleX + 1, appleY + 1, 18, 18);
-        
+
         //snake body
         int counter = 5;
         for(Dot square : dots){
@@ -58,16 +81,16 @@ public class Board extends JPanel implements KeyListener
             g.fillRect(square.getX() + 1,square.getY() + 1,18,18);
             counter++;
         }
-        
+
         //snake head
         g.setColor(head);
         g.fillRect(dots.get(0).getX() + 1,dots.get(0).getY() + 1, 18, 18);
-        
+
         //score
         g.setColor(Color.white);
         g.setFont(new Font("Helvetica", Font.PLAIN, 20));
         g.drawString("Score: " + dots.size(), 3, 18);
-        
+
         //game over
         if(gameRunning == false){
             g.setColor(apple);
@@ -103,7 +126,7 @@ public class Board extends JPanel implements KeyListener
         appleX = xApple;
         appleY = yApple;
     }
-    
+
     public void checkCollision(){
         int headX = dots.get(0).getX();
         int headY = dots.get(0).getY();
@@ -112,7 +135,7 @@ public class Board extends JPanel implements KeyListener
             repaint();
             return;
         }
-        
+
         for(int index = 1; index < dots.size(); index++){
             if(dots.get(index).getX() == headX && dots.get(index).getY() == headY){
                 gameRunning = false;
@@ -127,11 +150,20 @@ public class Board extends JPanel implements KeyListener
         }
     }
 
+    public void newGame(){
+        dots.clear();
+        dots.add(new Dot(assignX(), assignY()));
+        currentDirection = 0;
+        numAdd = 0;
+        gameRunning = true;
+        setApple();
+        this.repaint();
+    }
+
     public void keyPressed(KeyEvent e){
         int keyPressed = e.getKeyCode();
-        
-        if(numMoved == 0){move();}
-        
+        if(numMoved == 0 && gameRunning == true){move();}
+
         if(currentDirection == left && (keyPressed == up || keyPressed == down)){
             currentDirection = keyPressed;
         }
@@ -148,8 +180,15 @@ public class Board extends JPanel implements KeyListener
         (keyPressed == up || keyPressed == down || keyPressed == left || keyPressed == right)){
             currentDirection = keyPressed;
         }
-        else if(keyPressed == KeyEvent.VK_Q){gameRunning = false;}
+        else if(keyPressed == KeyEvent.VK_Q){
+            gameRunning = false;
+            repaint();
+        }
         numMoved = 0;
+
+        if(gameRunning == false && keyPressed == KeyEvent.VK_N){
+            newGame();
+        }
     }
 
     public void keyReleased(KeyEvent e){}
@@ -174,18 +213,5 @@ public class Board extends JPanel implements KeyListener
         else{numAdd--;}
         numMoved++;
         repaint();
-    }
-
-    public void game(){
-        while(gameRunning){
-            try {
-                Thread.sleep(70);
-            }catch(InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
-            move();
-            checkApple();
-            checkCollision();
-        }
     }
 }
