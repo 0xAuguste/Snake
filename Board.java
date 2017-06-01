@@ -5,19 +5,23 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class Board extends JPanel implements KeyListener
+public class Board extends JPanel implements KeyListener, ActionListener
 {
+    JFrame board = new JFrame();
+    
     private int up = KeyEvent.VK_UP;
     private int down = KeyEvent.VK_DOWN;
     private int left = KeyEvent.VK_LEFT;
     private int right = KeyEvent.VK_RIGHT;
     private ArrayList<Dot> dots = new ArrayList<Dot>();
     private int currentDirection = 0;
-    private boolean gameRunning = true;
+    private boolean gameRunning = false;
     private int appleX;
     private int appleY;
     private int numAdd = 0;
     private int numMoved = 0;
+    private boolean menu = true;
+    private int difficulty = 70;
 
     Color head = new Color(10,115,37);
     Color darkBrown = new Color(135,115,85);
@@ -26,17 +30,8 @@ public class Board extends JPanel implements KeyListener
     Color border = new Color(75,63,45);
     Color apple = new Color(175,45,22);
 
-    public Board(){
-        addKeyListener(this);
-        setFocusable(true);
-        JFrame board = new JFrame();
-        board.pack();
-        board.setSize(board.getInsets().left + 1200 + board.getInsets().right,
-            board.getInsets().top + 800 + board.getInsets().bottom);
-        board.add(this);
-        board.setResizable(false);
-        dots.add(new Dot(assignX(),assignY()));
-        TimerTask timerTask = new TimerTask(){
+    Timer timer = new Timer(true);
+    TimerTask timerTask = new TimerTask(){
             public void run() {
                 if(gameRunning){
                     move();
@@ -45,57 +40,84 @@ public class Board extends JPanel implements KeyListener
                 }
             }
         };
+    
+    JButton easy = new JButton("Easy");
+    JButton medium = new JButton("Medium");
+    JButton hard = new JButton("Hard");
+    JButton start = new JButton("Start Game");
+    public Board(){
+        addKeyListener(this);
+        setFocusable(true);
+        this.add(easy);
+        easy.addActionListener(this);
+        this.add(medium);
+        medium.addActionListener(this);
+        this.add(hard);
+        hard.addActionListener(this);
+        this.add(start);
+        start.addActionListener(this);
         
-        //running timer task as daemon thread
-        Timer timer = new Timer(true);
-        timer.scheduleAtFixedRate(timerTask, 0, 70);
-
+        board.pack();
+        board.setSize(board.getInsets().left + 1200 + board.getInsets().right,
+            board.getInsets().top + 800 + board.getInsets().bottom);
+        board.add(this);
+        board.setResizable(false);
+        dots.add(new Dot(assignX(),assignY()));
         board.setVisible(true);
         setApple();
     } 
 
     public static void main(String[] args){
-        new Board();
+        
     }
 
     public void paintComponent(Graphics g){
-        //background
-        g.setColor(background);
-
-        //border
-        g.fillRect(0,0,1200,800);
-        g.setColor(border);
-        g.fillRect(0, 0, 20, 800);
-        g.fillRect(0, 0, 1200, 20);
-        g.fillRect(1180, 0, 20, 800);
-        g.fillRect(0, 780, 1200, 20);
-        g.setColor(apple);
-        g.fillRect(appleX + 1, appleY + 1, 18, 18);
-
-        //snake body
-        int counter = 5;
-        for(Dot square : dots){
-            if((counter / 3) % 2 == 0) {
-                g.setColor(lightBrown);
-            }else{g.setColor(darkBrown);}
-            g.fillRect(square.getX() + 1,square.getY() + 1,18,18);
-            counter++;
-        }
-
-        //snake head
-        g.setColor(head);
-        g.fillRect(dots.get(0).getX() + 1,dots.get(0).getY() + 1, 18, 18);
-
-        //score
-        g.setColor(Color.white);
-        g.setFont(new Font("Helvetica", Font.PLAIN, 20));
-        g.drawString("Score: " + dots.size(), 3, 18);
-
-        //game over
-        if(gameRunning == false){
+        if(menu){
+            g.setColor(Color.white);
+            g.fillRect(0,0,1200,800);
+        }else {
+            //gameplay
+            //background
+            g.setColor(background);
+            g.fillRect(0,0,1200,800);
+            //border
+            g.setColor(border);
+            g.fillRect(0, 0, 20, 800);
+            g.fillRect(0, 0, 1200, 20);
+            g.fillRect(1180, 0, 20, 800);
+            g.fillRect(0, 780, 1200, 20);
+            
+            //apple
             g.setColor(apple);
-            g.setFont(new Font("Helvetica", Font.PLAIN, 80));
-            g.drawString("Game Over", 400, 400);
+            g.fillRect(appleX + 1, appleY + 1, 18, 18);
+    
+            //snake body
+            int counter = 5;
+            for(Dot square : dots){
+                if((counter / 3) % 2 == 0) {
+                    g.setColor(lightBrown);
+                }else{g.setColor(darkBrown);}
+                g.fillRect(square.getX() + 1,square.getY() + 1,18,18);
+                counter++;
+            }
+    
+            //snake head
+            g.setColor(head);
+            g.fillRect(dots.get(0).getX() + 1,dots.get(0).getY() + 1, 18, 18);
+    
+            //score
+            g.setColor(Color.white);
+            g.setFont(new Font("Helvetica", Font.PLAIN, 20));
+            g.drawString("Score: " + dots.size(), 3, 18);
+    
+            //game over
+            if(!gameRunning){
+                g.setColor(apple);
+                g.setFont(new Font("Helvetica", Font.PLAIN, 80));
+                g.drawString("Game Over", 400, 400);
+                g.setFont(new Font("Helvetica", Font.PLAIN, 20));
+                g.drawString("Press N to start a new game",480,450);
+            }
         }
     }
 
@@ -162,7 +184,7 @@ public class Board extends JPanel implements KeyListener
 
     public void keyPressed(KeyEvent e){
         int keyPressed = e.getKeyCode();
-        if(numMoved == 0 && gameRunning == true){move();}
+        if(numMoved == 0 && gameRunning){move();}
 
         if(currentDirection == left && (keyPressed == up || keyPressed == down)){
             currentDirection = keyPressed;
@@ -184,9 +206,10 @@ public class Board extends JPanel implements KeyListener
             gameRunning = false;
             repaint();
         }
+        else if(keyPressed == KeyEvent.VK_P)timer.cancel();
         numMoved = 0;
 
-        if(gameRunning == false && keyPressed == KeyEvent.VK_N){
+        if(!gameRunning && keyPressed == KeyEvent.VK_N){
             newGame();
         }
     }
@@ -194,6 +217,22 @@ public class Board extends JPanel implements KeyListener
     public void keyReleased(KeyEvent e){}
 
     public void keyTyped(KeyEvent e){}
+    
+    public void actionPerformed(ActionEvent e){
+        String command = e.getActionCommand();
+        if(command == easy.getActionCommand()){difficulty = 100;}
+        else if(command == medium.getActionCommand()){difficulty = 70;}
+        else if(command == hard.getActionCommand()){difficulty = 50;}
+        else if(command == start.getActionCommand()){
+            easy.setVisible(false);
+            medium.setVisible(false);
+            hard.setVisible(false);
+            start.setVisible(false);
+            timer.scheduleAtFixedRate(timerTask, 0, difficulty);
+            menu = false;
+            gameRunning = true;
+        }
+    }
 
     public void move(){
         int numDots = dots.size();
