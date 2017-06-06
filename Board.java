@@ -70,7 +70,7 @@ public class Board extends JPanel implements KeyListener, ActionListener
     } 
 
     public static void main(String[] args){
-
+        new Board();
     }
 
     public void paintComponent(Graphics g){
