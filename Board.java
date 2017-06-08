@@ -8,14 +8,14 @@ import java.util.TimerTask;
 public class Board extends JPanel implements KeyListener, ActionListener
 {
     JFrame board = new JFrame();
-
+    
     private int up = KeyEvent.VK_UP;
     private int down = KeyEvent.VK_DOWN;
     private int left = KeyEvent.VK_LEFT;
     private int right = KeyEvent.VK_RIGHT;
     private ArrayList<Dot> dots = new ArrayList<Dot>();
     private int currentDirection = 0;
-    boolean gameRunning = false;
+    private boolean gameRunning = false;
     private int appleX;
     private int appleY;
     private int numAdd = 0;
@@ -30,6 +30,7 @@ public class Board extends JPanel implements KeyListener, ActionListener
     Color border = new Color(75,63,45);
     Color apple = new Color(175,45,22);
 
+    Timer timer = new Timer(true);
     TimerTask timerTask = new TimerTask(){
             public void run() {
                 if(gameRunning){
@@ -39,17 +40,14 @@ public class Board extends JPanel implements KeyListener, ActionListener
                 }
             }
         };
-    Timer timer = new Timer(true);
-
+    
     JButton easy = new JButton("Easy");
     JButton medium = new JButton("Medium");
     JButton hard = new JButton("Hard");
     JButton start = new JButton("Start Game");
-    JLabel label = new JLabel("Choose Your Difficulty");
     public Board(){
         addKeyListener(this);
         setFocusable(true);
-        this.add(label);
         this.add(easy);
         easy.addActionListener(this);
         this.add(medium);
@@ -58,7 +56,7 @@ public class Board extends JPanel implements KeyListener, ActionListener
         hard.addActionListener(this);
         this.add(start);
         start.addActionListener(this);
-
+        
         board.pack();
         board.setSize(board.getInsets().left + 1200 + board.getInsets().right,
             board.getInsets().top + 800 + board.getInsets().bottom);
@@ -88,11 +86,11 @@ public class Board extends JPanel implements KeyListener, ActionListener
             g.fillRect(0, 0, 1200, 20);
             g.fillRect(1180, 0, 20, 800);
             g.fillRect(0, 780, 1200, 20);
-
+            
             //apple
             g.setColor(apple);
             g.fillRect(appleX + 1, appleY + 1, 18, 18);
-
+    
             //snake body
             int counter = 5;
             for(Dot square : dots){
@@ -102,16 +100,16 @@ public class Board extends JPanel implements KeyListener, ActionListener
                 g.fillRect(square.getX() + 1,square.getY() + 1,18,18);
                 counter++;
             }
-
+    
             //snake head
             g.setColor(head);
             g.fillRect(dots.get(0).getX() + 1,dots.get(0).getY() + 1, 18, 18);
-
+    
             //score
             g.setColor(Color.white);
             g.setFont(new Font("Helvetica", Font.PLAIN, 20));
             g.drawString("Score: " + dots.size(), 3, 18);
-
+    
             //game over
             if(!gameRunning){
                 g.setColor(apple);
@@ -156,8 +154,6 @@ public class Board extends JPanel implements KeyListener, ActionListener
         int headY = dots.get(0).getY();
         if(headX == 0 || headX == 1180 || headY == 0 || headY == 780){
             gameRunning = false;
-            timer.cancel();
-            timer.purge();
             repaint();
             return;
         }
@@ -165,8 +161,6 @@ public class Board extends JPanel implements KeyListener, ActionListener
         for(int index = 1; index < dots.size(); index++){
             if(dots.get(index).getX() == headX && dots.get(index).getY() == headY){
                 gameRunning = false;
-                timer.cancel();
-                timer.purge();
             }
         }
     }
@@ -183,6 +177,7 @@ public class Board extends JPanel implements KeyListener, ActionListener
         dots.add(new Dot(assignX(), assignY()));
         currentDirection = 0;
         numAdd = 0;
+        gameRunning = true;
         setApple();
         this.repaint();
     }
@@ -209,42 +204,33 @@ public class Board extends JPanel implements KeyListener, ActionListener
         }
         else if(keyPressed == KeyEvent.VK_Q){
             gameRunning = false;
-            timer.cancel();
-            timer.purge();
             repaint();
         }
         else if(keyPressed == KeyEvent.VK_P)timer.cancel();
         numMoved = 0;
 
         if(!gameRunning && keyPressed == KeyEvent.VK_N){
-            menu = true;
             newGame();
-            setDisplay();
         }
-    }
-
-    public void setDisplay(){
-        easy.setVisible(menu);
-        medium.setVisible(menu);
-        hard.setVisible(menu);
-        start.setVisible(menu);
-        label.setVisible(menu);
     }
 
     public void keyReleased(KeyEvent e){}
 
     public void keyTyped(KeyEvent e){}
-
+    
     public void actionPerformed(ActionEvent e){
         String command = e.getActionCommand();
         if(command == easy.getActionCommand()){difficulty = 100;}
         else if(command == medium.getActionCommand()){difficulty = 70;}
         else if(command == hard.getActionCommand()){difficulty = 50;}
         else if(command == start.getActionCommand()){
-            menu = false;
-            setDisplay();
-            gameRunning = true;
+            easy.setVisible(false);
+            medium.setVisible(false);
+            hard.setVisible(false);
+            start.setVisible(false);
             timer.scheduleAtFixedRate(timerTask, 0, difficulty);
+            menu = false;
+            gameRunning = true;
         }
     }
 
